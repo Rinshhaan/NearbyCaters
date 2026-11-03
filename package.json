@@ -6,6 +6,7 @@
     "dev:backend": "cd backend && npm run dev",
     "dev:admin": "cd admin && npm run dev",
     "dev:client": "cd client-portal && npm run dev",
-    "dev:user": "cd user-app && npm run dev"
+    "dev:user": "cd user-app && npm run dev",
+    "start:":"cd backend && node src/index.js"
   }
 }
