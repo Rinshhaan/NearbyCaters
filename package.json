@@ -1,0 +1,11 @@
+{
+  "name": "nearme2.0",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev:backend": "cd backend && npm run dev",
+    "dev:admin": "cd admin && npm run dev",
+    "dev:client": "cd client-portal && npm run dev",
+    "dev:user": "cd user-app && npm run dev"
+  }
+}

@@ -1,0 +1,72 @@
+name: Security and build checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  secret-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: false
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: false
+
+  backend:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: file:./ci.db
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+        working-directory: backend
+      - run: npm audit --audit-level=high
+        working-directory: backend
+      - run: npm run db:generate
+        working-directory: backend
+      - run: npx prisma validate
+        working-directory: backend
+      - run: touch prisma/ci.db
+        working-directory: backend
+      - run: npm run db:migrate:deploy
+        working-directory: backend
+      - run: npm test
+        working-directory: backend
+
+  frontends:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [admin, client-portal, user-app]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+      - run: npm ci
+        working-directory: ${{ matrix.app }}
+      - run: npm audit --audit-level=high
+        working-directory: ${{ matrix.app }}
+      - run: npm run lint
+        working-directory: ${{ matrix.app }}
+      - run: npm run build
+        working-directory: ${{ matrix.app }}

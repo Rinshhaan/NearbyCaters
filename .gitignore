@@ -1,0 +1,15 @@
+node_modules/
+**/dist/
+**/coverage/
+**/.env
+**/.env.*
+!**/.env.example
+**/uploads/
+backend/generated/
+backend/prisma/*.db
+backend/prisma/*.db-journal
+*.log
+*.sqlite
+*.bak
+service-account*.json
+firebase-adminsdk*.json

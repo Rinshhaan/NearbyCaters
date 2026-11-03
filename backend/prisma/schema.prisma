@@ -1,0 +1,229 @@
+// Prisma schema file configured for SQLite for instant, zero-setup local development
+// (Can be changed back to "postgresql" anytime for production)
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-v2"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// ADMIN — single superuser account
+// ─────────────────────────────────────────────
+
+model Admin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String   @default("Admin")
+  ratePerBoy   Int      @default(20) // ₹20 per boy (configurable)
+  tokenVersion Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("admins")
+}
+
+// ─────────────────────────────────────────────
+// CLIENTS — event owners (must be approved)
+// ─────────────────────────────────────────────
+
+model Client {
+  id           String    @id @default(cuid())
+  name         String
+  companyName  String?
+  place        String    @default("Kerala")
+  bio          String?
+  email        String    @unique
+  phone        String    @unique
+  passwordHash String
+  isApproved   Boolean   @default(false)
+  isActive     Boolean   @default(true)
+  tokenVersion Int       @default(0)
+  notes        String?   // admin notes
+  logoUrl      String?   // client logo image (Cloudinary URL)
+  bannerUrl    String?   // client banner image (Cloudinary URL)
+  workImages   String?   // JSON string: array of up to 10 Cloudinary URLs
+  rating       Float     @default(0)
+  ratingCount  Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  events       Event[]
+  payments     Payment[]
+
+  @@map("clients")
+}
+
+// ─────────────────────────────────────────────
+// USERS — the boys who work events
+// ─────────────────────────────────────────────
+
+model User {
+  id          String    @id @default(cuid())
+  name        String
+  phone       String?   @unique
+  email       String?   @unique
+  place       String
+  passwordHash String?  // email/password login for staff
+  pinHash     String?   // legacy 4-digit PIN login
+  avatarUrl   String?   // profile picture for boys
+  fcmToken    String?   // Firebase Cloud Messaging token for push notifications
+  isActive    Boolean   @default(true)
+  tokenVersion Int     @default(0)
+  rating      Float     @default(0)
+  ratingCount Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  bookings      Booking[]
+  notifications UserNotification[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────
+// EVENTS — created by clients
+// ─────────────────────────────────────────────
+
+model Event {
+  id              String      @id @default(cuid())
+  clientId        String
+  client          Client      @relation(fields: [clientId], references: [id])
+
+  name            String
+  description     String?
+  location        String      // venue name / address
+  locationMapUrl  String?    // Google Maps embed URL
+  imageUrl        String?     // Cloudinary URL
+  date            DateTime    // event date
+  reportTime      String      // time boys must arrive e.g. "08:30"
+  slotsNeeded     Int?        // null = unlimited
+  reservedSlots   Int         @default(0)
+  timerEnd        DateTime?   // booking deadline
+
+  status          String      @default("draft") // "draft" | "published" | "booking_closed" | "completed" | "cancelled"
+  isGeoRestricted Boolean     @default(true) // Kerala-only by default
+
+  attendanceToken String?     // Unique shareable supervisor token for on-site staff attendance
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  bookings        Booking[]
+  payment         Payment?
+  notifications   Notification[]
+
+  @@map("events")
+}
+
+// ─────────────────────────────────────────────
+// BOOKINGS — user books an event slot
+// ─────────────────────────────────────────────
+
+model Booking {
+  id             String        @id @default(cuid())
+  eventId        String
+  event          Event         @relation(fields: [eventId], references: [id])
+  userId         String
+  user           User          @relation(fields: [userId], references: [id])
+
+  status         String        @default("confirmed") // "confirmed" | "cancelled"
+  attended       Boolean       @default(false)
+  attendanceTime DateTime?
+  arrivalTime    String?       // Time arrived on site e.g. "08:15 AM"
+  leavingTime    String?       // Time departed e.g. "05:00 PM"
+  notes          String?       // admin/supervisor notes on this boy
+  fine           String?       // fine description/amount if any
+  uniform        Boolean       @default(false)  // uniform provided?
+  staffPaid      Boolean       @default(false)  // wage paid to the boy on site
+  isPaid         Boolean       @default(false)  // client paid admin platform fee?
+  bookedByUserId String?       // if booked by friend in a group booking
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([eventId, userId]) // one booking per user per event
+
+  @@map("bookings")
+}
+
+// ─────────────────────────────────────────────
+// PAYMENTS — client pays ₹20/boy to admin
+// ─────────────────────────────────────────────
+
+model Payment {
+  id                String        @id @default(cuid())
+  clientId          String
+  client            Client        @relation(fields: [clientId], references: [id])
+  eventId           String        @unique
+  event             Event         @relation(fields: [eventId], references: [id])
+
+  boysCount         Int           // number of confirmed boys
+  ratePerBoy        Int           // ₹ rate at time of payment
+  totalAmount       Int           // boysCount × ratePerBoy (in paise for Razorpay)
+
+  status            String        @default("pending") // "pending" | "paid" | "failed"
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  razorpaySignature String?
+
+  paidAt            DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@map("payments")
+}
+
+// ─────────────────────────────────────────────
+// NOTIFICATIONS — scheduled FCM push notifications
+// ─────────────────────────────────────────────
+
+model Notification {
+  id          String    @id @default(cuid())
+  eventId     String
+  event       Event     @relation(fields: [eventId], references: [id])
+  title       String
+  body        String
+  scheduledAt DateTime  // when to send
+  sentAt      DateTime? // null until sent
+  isSent      Boolean   @default(false)
+
+  userNotifications UserNotification[]
+
+  createdAt   DateTime  @default(now())
+
+  @@map("notifications")
+}
+
+// Tracks which users received which notification
+model UserNotification {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  notificationId String
+  notification   Notification @relation(fields: [notificationId], references: [id])
+  isSent         Boolean      @default(false)
+  sentAt         DateTime?
+
+  @@unique([userId, notificationId])
+  @@map("user_notifications")
+}
+
+// Short-lived, single-use links for password recovery across account types.
+model PasswordReset {
+  id        String    @id @default(cuid())
+  role      String
+  accountId String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([role, accountId])
+  @@map("password_resets")
+}
