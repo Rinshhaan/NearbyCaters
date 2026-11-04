@@ -19,7 +19,7 @@ test('map input accepts Google Maps URLs and rejects arbitrary iframe targets', 
 
 test('image addresses allow HTTPS and local development uploads but reject executable schemes and SVG', () => {
   assert.equal(isSafeImageUrl('https://images.example/event.webp'), true);
-  assert.equal(isSafeImageUrl('http://localhost:4000/uploads/abc.jpg'), true);
+  assert.equal(isSafeImageUrl('https://nearbycaters.onrender.com/uploads/abc.jpg'), true);
   assert.equal(isSafeImageUrl('http://images.example/event.jpg'), false);
   assert.equal(isSafeImageUrl('javascript:alert(1)'), false);
   assert.equal(isSafeImageUrl('https://images.example/active.svg'), false);

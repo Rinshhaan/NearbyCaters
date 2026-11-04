@@ -13,7 +13,7 @@ npm run dev
 Copy `.env.example` to `.env` and fill in values.
 
 ## API Base URL
-`http://localhost:4000/api/v1`
+`https://nearbycaters.onrender.com/api/v1`
 
 ## Role-Based Access
 - `admin` — hardcoded single admin account
