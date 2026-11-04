@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CalendarDays, Clock, MapPin, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
-import api from '../lib/api';
+import api, { CLIENT_PORTAL_URL } from '../lib/api';
 import { useAuthStore } from '../store/authStore';
 import MapThumbnail from '../components/MapThumbnail';
 
@@ -109,7 +109,7 @@ export default function Home() {
 
   const { user, token, setAuth } = useAuthStore();
   const navigate = useNavigate();
-  const clientPortalUrl = import.meta.env.VITE_CLIENT_PORTAL_URL || 'https://nearbycaters-client.onrender.com';
+  const clientPortalUrl = CLIENT_PORTAL_URL;
 
   const fetchEvents = useCallback(async () => {
     const requestId = ++eventsRequestId.current;

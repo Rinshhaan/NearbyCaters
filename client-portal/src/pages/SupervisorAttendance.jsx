@@ -3,9 +3,10 @@ import { useParams } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import { Check, Search, Copy, Clock, Phone, MapPin, Calendar, FileText } from 'lucide-react';
 import axios from 'axios';
+import { API_BASE_URL } from '../lib/api';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://nearbycaters.onrender.com/api/v1',
+  baseURL: API_BASE_URL,
 });
 
 export default function SupervisorAttendance() {
