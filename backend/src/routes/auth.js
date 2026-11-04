@@ -270,9 +270,9 @@ router.post('/user/login', authLimiter, async (req, res, next) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const { authenticate, requireRole } = require('../middleware/auth');
 const recoveryAccounts = {
-  admin: { model: 'admin', baseUrl: () => process.env.ADMIN_URL || 'http://localhost:5173' },
-  client: { model: 'client', baseUrl: () => process.env.CLIENT_URL || 'http://localhost:5174' },
-  user: { model: 'user', baseUrl: () => process.env.USER_URL || 'http://localhost:5175' },
+  admin: { model: 'admin', baseUrl: () => process.env.ADMIN_URL || 'https://nearbycaters-admin.onrender.com' },
+  client: { model: 'client', baseUrl: () => process.env.CLIENT_URL || 'https://nearbycaters-client.onrender.com' },
+  user: { model: 'user', baseUrl: () => process.env.USER_URL || 'https://nearbycaters-frontend-userapp.onrender.com' },
 };
 const recoveryBaseUrl = (role) => {
   const configured = role === 'admin' ? process.env.ADMIN_URL : role === 'client' ? process.env.CLIENT_URL : process.env.USER_URL;

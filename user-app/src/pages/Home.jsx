@@ -109,7 +109,7 @@ export default function Home() {
 
   const { user, token, setAuth } = useAuthStore();
   const navigate = useNavigate();
-  const clientPortalUrl = import.meta.env.VITE_CLIENT_PORTAL_URL || 'http://localhost:5174';
+  const clientPortalUrl = import.meta.env.VITE_CLIENT_PORTAL_URL || 'https://nearbycaters-client.onrender.com';
 
   const fetchEvents = useCallback(async () => {
     const requestId = ++eventsRequestId.current;
